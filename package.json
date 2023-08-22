@@ -1,0 +1,17 @@
+{
+  "name": "glhf_clothes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "gulp"
+  },
+  "author": "ThermalCube",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "^4.0.2"
+  },
+  "dependencies": {
+    "del": "^7.0.0"
+  }
+}

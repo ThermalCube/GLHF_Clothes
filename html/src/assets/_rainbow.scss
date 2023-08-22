@@ -1,0 +1,9 @@
+// animation: rainbow 15s linear infinite;
+
+@keyframes rainbow {
+  @for $i from 0 through 360 {
+    #{$i / 3.6}% {
+      background: hsl($i, 100%, 50%);
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "files.exclude": {
+    "node_modules": true,
+    ".vscode": true,
+    "package-lock.json": true,
+    "html\\node_modules": true,
+    "html\\dist": true,
+    "html\\.vscode": true,
+    "html\\package-lock.json": true
+  }
+}

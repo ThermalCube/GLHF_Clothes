@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "gulp",
+      "task": "default",
+      "group": "build",
+      "problemMatcher": [],
+      "label": "Build GLHF_Clothes"
+    }
+  ]
+}
