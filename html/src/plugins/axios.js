@@ -12,3 +12,5 @@ export default {
         app.provide('$axios', instance);
     }
 }
+
+export const $axios = instance;

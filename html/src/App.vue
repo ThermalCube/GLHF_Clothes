@@ -2,22 +2,14 @@
 import { computed, inject, onMounted, ref, watch } from "vue";
 import { RouterLink, RouterView } from "vue-router";
 import { useEventListener } from "@vueuse/core";
-import * as R from "ramda";
-import ComponentSlider from "@/components/ComponentSlider.vue";
-import ComponentInput from "@/components/ComponentInput.vue";
-import ComponentColor from "@/components/ComponentColor.vue";
-import hc from "@/assets/hairColors.js";
-import * as Restrictions from "@/assets/restrictions.js";
-import {
-	slider as CT_Slider,
-	color as CT_Color,
-} from "@/assets/controlTypes.js";
+import { useComponentStore } from "@/stores/componentStore";
+import Menu from "@/components/ui/Menu.vue";
 
-if (import.meta.env.DEV) {
+if (false && import.meta.env.DEV) {
 	import("@/assets/dev.css");
 }
 
-const $axios = inject("$axios");
+const componentStore = useComponentStore();
 
 const rootcontainer = ref(null);
 
@@ -27,15 +19,6 @@ function hasScrollbar() {
 }
 
 const isVisible = ref(false);
-const playerId = ref(null);
-
-const msg = computed(() => {
-	if (playerId.value != null) {
-		return `Deine PlayerId ist: ${playerId.value}`;
-	} else {
-		return "Deine PlayerId wird geladen";
-	}
-});
 
 useEventListener(window, "message", function (evt) {
 	const item = evt.data || evt.detail;
@@ -48,126 +31,25 @@ useEventListener(window, "message", function (evt) {
 				isVisible.value = !isVisible.value;
 				break;
 			case "setPlayerID":
-				playerId.value = item.data;
 				break;
 		}
 	}
 });
 
 onMounted(async () => {
-	await fetchData();
-	initValues();
+	await componentStore.tryInit();
 });
-
-const components = ref(null);
-const maxVals = ref(null);
-
-const componentNames = computed(() => {
-	if (components.value == null) return null;
-	let result = [];
-	for (let i = 0; i < components.value.length; i++) {
-		const component = components.value[i];
-		result.push(component.name);
-	}
-	return result;
-});
-
-async function fetchData() {
-	if (import.meta.env.DEV) {
-		components.value = (await import("@/dummy/components")).default;
-		maxVals.value = (await import("@/dummy/maxVals")).default;
-	} else {
-		const resp = await $axios.post("fetchData");
-		components.value = resp.data.components;
-		maxVals.value = resp.data.maxVals;
-	}
-}
-
-function getComponent(name) {
-	if (!components.value) return null;
-
-	let comp = R.find(R.propEq(name, "name"))(components.value);
-
-	return comp;
-}
-
-const componentModels = ref({});
-
-let unwatch;
-
-function initValues() {
-	if (unwatch) unwatch();
-
-	components.value.forEach((component) => {
-		componentModels.value[component.name] =
-			component.value ?? component.min;
-	});
-}
-
-async function componentUpdate(component, value) {
-	componentModels.value[component] = value;
-
-	const resp = await $axios.post("updateComponent", {
-		component: component,
-		value: value,
-	});
-	if (resp.data) {
-		Object.assign(maxVals.value, resp.data);
-	}
-}
-
-const hairColors = ref(hc);
 </script>
 
 <template>
-	<div
-		class="rootcontainer"
-		ref="rootcontainer"
-		v-if="isVisible"
-		:class="{ scroll: hasScrollbar() }"
-	>
-		<p>{{ msg }}</p>
-		<!--<pre>{{ componentNames }}</pre>-->
+	<div class="rootwrapper" v-if="isVisible">
+		<Menu />
 		<div
-			v-for="comp in Restrictions.all"
-			:key="comp"
-			:set="(component = getComponent(comp))"
+			class="rootcontainer"
+			ref="rootcontainer"
+			:class="{ scroll: hasScrollbar() }"
 		>
-			<template v-if="CT_Slider.indexOf(comp) > -1">
-				<component-slider
-					:modelValue="componentModels[comp]"
-					@update:modelValue="
-						(newValue) => componentUpdate(comp, newValue)
-					"
-					:min="component.min"
-					:max="maxVals[comp]"
-					:isPercent="maxVals[comp] == 100"
-					:name="component.label"
-				/>
-			</template>
-			<template v-else-if="CT_Color.indexOf(comp) > -1">
-				<component-color
-					:modelValue="componentModels[comp]"
-					@update:modelValue="
-						(newValue) => componentUpdate(comp, newValue)
-					"
-					:min="component.min"
-					:max="maxVals[comp]"
-					:name="component.label"
-					:options="hairColors"
-				/>
-			</template>
-			<template v-else>
-				<component-input
-					:modelValue="componentModels[comp]"
-					@update:modelValue="
-						(newValue) => componentUpdate(comp, newValue)
-					"
-					:min="component.min"
-					:max="maxVals[comp]"
-					:name="component.label"
-				/>
-			</template>
+			<router-view></router-view>
 		</div>
 	</div>
 </template>
@@ -177,7 +59,7 @@ const hairColors = ref(hc);
 
 $scrollbarsize: 10px;
 
-.rootcontainer {
+.rootwrapper {
 	position: absolute;
 	display: block;
 	box-sizing: border-box;
@@ -186,6 +68,16 @@ $scrollbarsize: 10px;
 	bottom: 150px;
 	width: 600px;
 	height: calc(100% - 50px - 150px);
+	color: #fff;
+	z-index: 5;
+}
+
+.rootcontainer {
+	position: relative;
+	display: inline-block;
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
 	background-color: rgba(10, 10, 10, 0.5);
 	border-radius: 15px;
 	padding: 15px;
@@ -193,9 +85,11 @@ $scrollbarsize: 10px;
 	overflow-x: hidden;
 	overflow-y: auto;
 	background-clip: padding-box;
+	z-index: 10;
 
 	&.scroll {
-		border-radius: 0 15px;
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
 		padding-right: calc(15px - #{$scrollbarsize});
 
 		&::-webkit-scrollbar {
@@ -204,7 +98,8 @@ $scrollbarsize: 10px;
 
 			&-track {
 				background-color: rgba(10, 10, 10, 0.5);
-				border-radius: 15px 0;
+				border-top-right-radius: 15px;
+				border-bottom-right-radius: 15px;
 				background-clip: content-box;
 			}
 

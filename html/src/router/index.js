@@ -1,5 +1,4 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   // history: createWebHistory(import.meta.env.BASE_URL),
@@ -7,8 +6,15 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView
+      name: 'root',
+      redirect: { name: 'creator' },
+      children: [
+        {
+          path: 'creator',
+          name: 'creator',
+          component: () => import("@/views/CharacterCreator.vue")
+        }
+      ]
     }
   ]
 })
